@@ -84,6 +84,7 @@ services:
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
+      - ./.storage:/opt/airflow/.storage
       - ./plugins:/opt/airflow/plugins
     depends_on:
       - postgres
@@ -121,6 +122,7 @@ services:
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
+      - ./.storage:/opt/airflow/.storage
       - ./plugins:/opt/airflow/plugins
     command: ["airflow", "scheduler"]
     restart: unless-stopped
@@ -151,6 +153,7 @@ services:
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
+      - ./.storage:/opt/airflow/.storage
       - ./plugins:/opt/airflow/plugins
     command: ["airflow", "webserver"]
     restart: unless-stopped

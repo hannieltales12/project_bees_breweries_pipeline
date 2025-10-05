@@ -18,6 +18,7 @@ class LandingBreweriesTask(BaseOperator):
 
     def execute(
         self,
+        context,
     ) -> None:
         """
         Method responsible for extracting the list of breweries from the endpoint:
@@ -35,7 +36,9 @@ class LandingBreweriesTask(BaseOperator):
             BreweriesPackage.BASE_URL, BreweriesPackage.BREWERIES_HEADERS
         )
 
-        self._save_data(breweries_list)
+        dag_id = context['dag'].dag_id
+
+        self._save_data(breweries_list, dag_id)
 
     def _extract_breweries(
         self, base_url: str, breweries_headers: dict
@@ -94,17 +97,18 @@ class LandingBreweriesTask(BaseOperator):
 
             return breweries
 
-    def _save_data(self, data: list) -> None:
+    def _save_data(self, data: list, dag_id: str) -> None:
         """
         Save the data in a JSON file
 
         Args:
             data (list): List of breweries
+            dag_id (str): Dag id for pipeline
         """
 
         try:
 
-            diretory = "/opt/airflow/data/landing"
+            diretory = f"/opt/airflow/.storage/landing/{dag_id}"
 
             if not os.path.exists(diretory):
                 os.makedirs(diretory)

@@ -8,7 +8,11 @@ from bees_breweries_pipeline.tasks.landing_breweries_task import (
     LandingBreweriesTask,
 )
 
-from tools.const.pipeline import Pipeline
+from bees_breweries_pipeline.tasks.bronze_breweries_task import (
+    BronzeBreweriesTask
+)
+
+from bees_breweries_pipeline.tools.const.pipeline import Pipeline
 
 default_args = {
     "start_date": datetime(2024, 1, 1),
@@ -28,12 +32,16 @@ with DAG(
 
     start = DummyOperator(task_id="start")
 
-    extract_breweries = PythonOperator(
+    extract_breweries = LandingBreweriesTask(
         task_id="landing_breweries_task",
-        python_callable=LandingBreweriesTask.call,
         dag=dag,
+    )
+
+    transform_breweries = BronzeBreweriesTask(
+        task_id="transform_breweries_task",
+        dag=dag
     )
 
     end = DummyOperator(task_id="end")
 
-    start >> extract_breweries >> end
+    start >> extract_breweries >> transform_breweries >> end
