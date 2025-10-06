@@ -122,6 +122,11 @@ project_bees_breweries_pipeline/
 └── README.md
 ```
 
+## Note:
+- The jars/ folder was removed from version control to reduce repository size.
+- It originally contained .jar dependencies for Spark–MinIO integration (e.g., hadoop-aws and aws-java-sdk-bundle).
+- These are automatically downloaded during the Spark Docker image build.
+
 ## Pipeline Overview
 
 ### Landing Layer
