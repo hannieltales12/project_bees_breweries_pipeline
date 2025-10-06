@@ -1,10 +1,6 @@
-
-
-
 class BreweriesPackage:
 
-    BASE_URL = "https://api.openbrewerydb.org/v1/breweries?per_page={}"
-
+    BASE_URL = "https://api.openbrewerydb.org/v1/breweries?page={}&per_page={}"
 
     BREWERIES_HEADERS = {
         "authority": "api.openbrewerydb.org",

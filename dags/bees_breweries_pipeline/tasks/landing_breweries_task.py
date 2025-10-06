@@ -36,7 +36,7 @@ class LandingBreweriesTask(BaseOperator):
             BreweriesPackage.BASE_URL, BreweriesPackage.BREWERIES_HEADERS
         )
 
-        dag_id = context['dag'].dag_id
+        dag_id = context["dag"].dag_id
 
         self._save_data(breweries_list, dag_id)
 
@@ -54,10 +54,10 @@ class LandingBreweriesTask(BaseOperator):
             list: List of breweries
         """
 
-        print("Making a request to the API list of breweries")
+        self.log.info("Making a request to the API list of breweries")
 
         # Control variable for pagination
-        per_page = 100
+        per_page = 200
 
         # Control variable for page number
         page = 1
@@ -66,12 +66,11 @@ class LandingBreweriesTask(BaseOperator):
 
         while True:
 
-            url_pagination = base_url.format(per_page)
-
-            params = {"per_page": per_page, "page": page}
+            url_pagination = base_url.format(page, per_page)
 
             base_response = requests.get(
-                url_pagination, headers=breweries_headers, params=params
+                url_pagination,
+                headers=breweries_headers,
             )
 
             if base_response.status_code != 200:
@@ -80,7 +79,7 @@ class LandingBreweriesTask(BaseOperator):
                 )
             else:
 
-                print(
+                self.log.info(
                     f"Request successful: {base_response.status_code} - Page {page}"
                 )
 
@@ -90,12 +89,14 @@ class LandingBreweriesTask(BaseOperator):
                     break
 
                 breweries.extend(data)
-                print(f"Page {page}, breweries found: {len(breweries)}")
+                self.log.info(
+                    f"Page {page}, breweries found: {len(breweries)}"
+                )
 
                 page += 1
                 time.sleep(0.3)
 
-            return breweries
+        return breweries
 
     def _save_data(self, data: list, dag_id: str) -> None:
         """
@@ -118,7 +119,7 @@ class LandingBreweriesTask(BaseOperator):
             with open(json_name, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
 
-            print(f"Data saved in: {json_name}")
+            self.log.info(f"Data saved in: {json_name}")
 
         except Exception as e:
             raise Exception(f"Error saving data: {e}")

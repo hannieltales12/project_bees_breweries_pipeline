@@ -17,6 +17,8 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - spark-network
 
   # Spark Master
   spark-master:
@@ -29,10 +31,14 @@ services:
       SPARK_MASTER_HOST: spark-master
       SPARK_MASTER_PORT: "7077"
       SPARK_MASTER_WEBUI_PORT: "8080"
+    volumes:
+      - ./airflow/.storage:/opt/airflow/.storage
     ports:
       - "8081:8080"   # UI do Spark Master (externo 8081 -> interno 8080)
       - "7077:7077"   # Porta RPC do master
     restart: unless-stopped
+    networks:
+      - spark-network
 
   # Spark Worker 1
   spark-worker-1:
@@ -46,9 +52,13 @@ services:
       SPARK_WORKER_CORES: "2"
       SPARK_WORKER_MEMORY: "2G"
       SPARK_WORKER_WEBUI_PORT: "8081"
+    volumes:
+      - ./airflow/.storage:/opt/airflow/.storage
     depends_on:
       - spark-master
     restart: unless-stopped
+    networks:
+      - spark-network
 
   # (Opcional) Spark Worker 2
   spark-worker-2:
@@ -62,9 +72,13 @@ services:
       SPARK_WORKER_CORES: "2"
       SPARK_WORKER_MEMORY: "2G"
       SPARK_WORKER_WEBUI_PORT: "8082"
+    volumes:
+      - ./airflow/.storage:/opt/airflow/.storage
     depends_on:
       - spark-master
     restart: unless-stopped
+    networks:
+      - spark-network
 
   # Inicialização do Airflow (migrar DB e criar usuário)
   airflow-init:
@@ -84,8 +98,9 @@ services:
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
-      - ./.storage:/opt/airflow/.storage
+      - ./airflow/.storage:/opt/airflow/.storage
       - ./plugins:/opt/airflow/plugins
+      - ./jars:/opt/airflow/jars
     depends_on:
       - postgres
       - spark-master
@@ -100,6 +115,8 @@ services:
         --email admin@example.com \
         --password admin || true"
     restart: "no"
+    networks:
+      - spark-network
 
   # Scheduler (executa as tasks no LocalExecutor)
   airflow-scheduler:
@@ -122,10 +139,13 @@ services:
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
-      - ./.storage:/opt/airflow/.storage
+      - ./airflow/.storage:/opt/airflow/.storage
       - ./plugins:/opt/airflow/plugins
+      - ./jars:/opt/airflow/jars
     command: ["airflow", "scheduler"]
     restart: unless-stopped
+    networks:
+      - spark-network
 
   # Webserver
   airflow-webserver:
@@ -153,10 +173,32 @@ services:
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
-      - ./.storage:/opt/airflow/.storage
+      - ./airflow/.storage:/opt/airflow/.storage
       - ./plugins:/opt/airflow/plugins
+      - ./jars:/opt/airflow/jars
     command: ["airflow", "webserver"]
     restart: unless-stopped
+    networks:
+      - spark-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - ./airflow/.storage/minio-data:/data
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - spark-network
 
 volumes:
   postgres_data:
+
+networks:
+  spark-network:
+    driver: bridge
